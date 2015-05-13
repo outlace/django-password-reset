@@ -38,7 +38,7 @@ class RecoverDone(SaltMixin, generic.TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(RecoverDone, self).get_context_data(**kwargs)
         try:
-            ctx['timestamp'], ctx['email'] = loads_with_timestamp(
+            ctx['timestamp'], ctx['username'] = loads_with_timestamp(
                 self.kwargs['signature'], salt=self.url_salt,
             )
         except signing.BadSignature:
@@ -54,7 +54,7 @@ class Recover(SaltMixin, generic.FormView):
     success_url_name = 'password_reset_sent'
     email_template_name = 'password_reset/recovery_email.txt'
     email_subject_template_name = 'password_reset/recovery_email_subject.txt'
-    search_fields = ['username', 'email']
+    search_fields = ['username']
 
     def get_success_url(self):
         return reverse(self.success_url_name, args=[self.mail_signature])
@@ -90,7 +90,7 @@ class Recover(SaltMixin, generic.FormView):
         subject = loader.render_to_string(self.email_subject_template_name,
                                           context).strip()
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL,
-                  [self.user.email])
+                  [self.user.username])
 
     def form_valid(self, form):
         self.user = form.cleaned_data['user']
@@ -103,7 +103,7 @@ class Recover(SaltMixin, generic.FormView):
             # since it may now be public information.
             email = self.user.username
         else:
-            email = self.user.email
+            email = self.user.username
         self.mail_signature = signing.dumps(email, salt=self.url_salt)
         return super(Recover, self).form_valid(form)
 recover = Recover.as_view()
